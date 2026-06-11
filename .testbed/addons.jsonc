@@ -1,0 +1,25 @@
+{
+  "$schema": "https://chickensoft.games/schemas/addons.schema.json",
+  "addons": {
+    "aerobeat-template-tool": {
+      "url": "..",
+      "source": "symlink",
+      "subfolder": "/"
+    },
+    "aerobeat-tool-core": {
+      "url": "../../aerobeat-tool-core",
+      "subfolder": "/",
+      "source": "symlink"
+    },
+    "aerobeat-tool-headless-manager": {
+      "url": "../../aerobeat-tool-headless-manager",
+      "subfolder": "/",
+      "source": "symlink"
+    },
+    "aerobeat-vendor-godot-unit-test": {
+      "url": "../../aerobeat-vendor-godot-unit-test",
+      "subfolder": "/",
+      "source": "symlink"
+    }
+  }
+}
