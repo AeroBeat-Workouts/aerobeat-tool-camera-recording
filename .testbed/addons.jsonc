@@ -20,6 +20,11 @@
       "url": "../../aerobeat-vendor-godot-unit-test",
       "subfolder": "/",
       "source": "symlink"
+    },
+    "aerobeat-tool-camera-tracking": {
+      "url": "../../aerobeat-tool-camera-tracking",
+      "subfolder": "/",
+      "source": "symlink"
     }
   }
 }

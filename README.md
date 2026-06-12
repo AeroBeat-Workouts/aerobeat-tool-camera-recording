@@ -2,7 +2,7 @@
 
 This repo owns the **durable saved-session artifact contract** for AeroBeat camera-tracking exports.
 
-Slice 1 intentionally stops at **package/bootstrap truth**. It does **not** implement replay, live capture orchestration, or video re-inference yet. Instead, it freezes the saved-session package shape, the v1 `session_manifest.json` contract, the `tracking/pose_frames.jsonl` writer contract, and the minimal validation/generation helpers that later Slice 2 work will build on.
+Slice 1 stops at **package/bootstrap truth**. Slice 2 extends that frozen contract into a truthful export lane. This repo still does **not** own replay execution or A-mode video re-inference, but it now owns the real saved-session writer flow for tracker-produced normalized frames: live-camera and video-file sessions can be exported into truthful `session_manifest.json` + `tracking/pose_frames.jsonl` packages, with manifest-declared `source/source_info.json` metadata for the real export path.
 
 The contract here is driven by the frozen parent plan at:
 
@@ -10,7 +10,7 @@ The contract here is driven by the frozen parent plan at:
 
 ## Current contract scope
 
-- repo-specific `CameraRecordingManager` entry surface for saved-session package bootstrap work
+- repo-specific `CameraRecordingManager` entry surface for saved-session package bootstrap and truthful tracker-frame export work
 - v1 `session_manifest.json` normalization + validation helpers
 - v1 `tracking/pose_frames.jsonl` normalization + validation helpers
 - saved-session folder/layout validation for B-first `saved_tracking_frames` packages
@@ -25,10 +25,12 @@ This repo **does own**:
 - pose-frame persistence contract and machine checks
 - source/truth/debug artifact path semantics inside the saved-session package
 - bootstrap helpers that create a structurally valid package skeleton
+- tracker-frame export helpers that write truthful saved-session artifacts from supported live-camera and video-file tracking flows
 
 This repo **does not own yet**:
 - replay execution
 - vendor inference
+- A-mode `video_reinference` implementation
 - `aerobeat-tool-camera-tracking` session lifecycle truth
 - gameplay gesture interpretation
 - prototype matching or learned classifier logic
@@ -91,13 +93,13 @@ Each `tracking/pose_frames.jsonl` line is one JSON object with these required fi
 - `landmarks`
 
 Each landmark object currently requires:
-- `id` — canonical semantic landmark name string, for example `left_shoulder`
+- `id` — stable landmark identifier string as written by the export flow (for real tracker exports this is the tracker landmark ID serialized as text, for example `"15"`)
 - `x`
 - `y`
 - `z`
 - `v`
 
-This intentionally freezes the saved-session recording format around semantic landmark IDs instead of raw vendor-private payloads.
+This intentionally freezes the saved-session recording format around tool-owned normalized landmark IDs instead of raw vendor-private payloads.
 
 ## Canonical example package
 
@@ -163,6 +165,23 @@ godot --headless --path .testbed \
   --script res://addons/aerobeat-tool-camera-recording/scripts/write_example_saved_session.gd \
   -- --output-root ../.tmp/generated_saved_session
 ```
+
+### Truthful Slice 2 export API
+
+`CameraRecordingManager.export_saved_session_from_tracking_frames(session_root, tracking_config, tracking_frames, options := {})` now writes a real saved-session package from normalized tracker output.
+
+Current supported real export flows:
+- `source.kind = live_camera`
+- `source.kind = video_file`
+
+Current real export artifacts:
+- `session_manifest.json`
+- `tracking/pose_frames.jsonl`
+- `source/source_info.json`
+
+The replay contract remains manifest-driven and B-first:
+- `replay_contract.replay_mode = saved_tracking_frames`
+- `replay_contract.entrypoint = artifacts.pose_frames`
 
 ## Additional contract docs
 
