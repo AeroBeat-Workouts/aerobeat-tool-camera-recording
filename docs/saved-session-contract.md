@@ -72,6 +72,15 @@ Required fields:
 - `replay_contract.replay_mode` — `saved_tracking_frames` | `video_reinference`
 - `replay_contract.entrypoint` — relative path used by the later replay reader
 
+Normalized metadata fields preserved across live, replay/video-file, and fixture-replay exports:
+- `source_contract.source_path`
+- `source_contract.camera_id`
+- `source_contract.selected_path`
+- `source_contract.fixture_id`
+- `truth_contract.timing_truth_path`
+- `truth_contract.timing_truth_source_path`
+- `truth_contract.label_context`
+
 ### Path rules
 
 Artifact paths must:
@@ -83,6 +92,8 @@ Artifact paths must:
 
 - `saved_tracking_frames` packages must use `replay_contract.entrypoint == artifacts.pose_frames`
 - `video_reinference` packages must declare `artifacts.source_video`
+- if `artifacts.timing_truth` is declared, `truth_contract.timing_truth_path` must be present and match it exactly
+- if `truth_contract.timing_truth_path` is set, `artifacts.timing_truth` must also be declared
 - Slice 1 validates those structural rules without implementing replay
 
 ## Pose-frame JSONL contract
@@ -174,6 +185,7 @@ The validator currently checks:
 - `frame_index` increments sequentially
 - manifest frame count matches the JSONL line count
 - `video_reinference` manifests only validate when `artifacts.source_video` is declared and present
+- timing-truth linkage stays internally consistent between `artifacts.timing_truth` and `truth_contract.timing_truth_path`
 
 ## Slice 2 coder assumptions now frozen
 

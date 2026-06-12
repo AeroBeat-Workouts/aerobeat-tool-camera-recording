@@ -71,10 +71,23 @@ static func validate_session_root(session_root: String) -> Dictionary:
 		elif not FileAccess.file_exists("%s/%s" % [session_root, source_video_path]):
 			_push_error(result, "video_reinference source video is missing on disk: %s" % source_video_path)
 
+	var truth_contract: Dictionary = manifest.get("truth_contract", {}) if manifest.get("truth_contract", {}) is Dictionary else {}
+	var timing_truth_path := str(truth_contract.get("timing_truth_path", "")).strip_edges()
+	var timing_truth_artifact := str(artifacts.get("timing_truth", "")).strip_edges()
+	if timing_truth_artifact != "" and timing_truth_path == "":
+		_push_error(result, "session_manifest.json: `truth_contract.timing_truth_path` is required when `artifacts.timing_truth` is declared")
+	elif timing_truth_path != "" and timing_truth_artifact == "":
+		_push_error(result, "session_manifest.json: `artifacts.timing_truth` is required when `truth_contract.timing_truth_path` is set")
+	elif timing_truth_path != "" and timing_truth_artifact != timing_truth_path:
+		_push_error(result, "session_manifest.json: `truth_contract.timing_truth_path` must match `artifacts.timing_truth`")
+
 	result["summary"]["manifest_path"] = manifest_path
 	result["summary"]["replay_mode"] = replay_mode
 	result["summary"]["source_kind"] = str(manifest.get("source_kind", ""))
 	result["summary"]["frame_count"] = int((manifest.get("tracking_contract", {}) if manifest.get("tracking_contract", {}) is Dictionary else {}).get("frame_count", 0))
+	result["summary"]["truth_linked"] = timing_truth_path != ""
+	result["summary"]["timing_truth_path"] = timing_truth_path
+	result["summary"]["label_context"] = str(truth_contract.get("label_context", ""))
 
 	return _finalize(result)
 

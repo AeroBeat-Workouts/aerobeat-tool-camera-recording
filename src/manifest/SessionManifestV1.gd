@@ -24,8 +24,8 @@ static func normalize(manifest: Dictionary) -> Dictionary:
 		"source_kind": str(manifest.get("source_kind", "")),
 		"artifacts": _normalize_artifacts(manifest.get("artifacts", {}) if manifest.get("artifacts", {}) is Dictionary else {}),
 		"tracking_contract": _normalize_tracking_contract(manifest.get("tracking_contract", {}) if manifest.get("tracking_contract", {}) is Dictionary else {}),
-		"source_contract": (manifest.get("source_contract", {}) if manifest.get("source_contract", {}) is Dictionary else {}).duplicate(true),
-		"truth_contract": (manifest.get("truth_contract", {}) if manifest.get("truth_contract", {}) is Dictionary else {}).duplicate(true),
+		"source_contract": _normalize_source_contract(manifest.get("source_contract", {}) if manifest.get("source_contract", {}) is Dictionary else {}),
+		"truth_contract": _normalize_truth_contract(manifest.get("truth_contract", {}) if manifest.get("truth_contract", {}) is Dictionary else {}),
 		"debug_contract": (manifest.get("debug_contract", {}) if manifest.get("debug_contract", {}) is Dictionary else {}).duplicate(true),
 		"replay_contract": _normalize_replay_contract(manifest.get("replay_contract", {}) if manifest.get("replay_contract", {}) is Dictionary else {}),
 	}
@@ -82,6 +82,17 @@ static func validate(manifest: Dictionary) -> Array[String]:
 	if replay_mode == "video_reinference" and str(artifacts.get("source_video", "")) == "":
 		errors.append("session_manifest.json: `artifacts.source_video` is required when `replay_contract.replay_mode` is `video_reinference`")
 
+	var truth_contract: Dictionary = manifest.get("truth_contract", {}) if manifest.get("truth_contract", {}) is Dictionary else {}
+	var truth_path := str(truth_contract.get("timing_truth_path", ""))
+	if truth_path != "":
+		errors.append_array(_validate_relative_path(truth_path, "session_manifest.json: `truth_contract.timing_truth_path`"))
+		if str(artifacts.get("timing_truth", "")) == "":
+			errors.append("session_manifest.json: `artifacts.timing_truth` is required when `truth_contract.timing_truth_path` is set")
+		elif truth_path != str(artifacts.get("timing_truth", "")):
+			errors.append("session_manifest.json: `truth_contract.timing_truth_path` must match `artifacts.timing_truth`")
+	elif str(artifacts.get("timing_truth", "")) != "":
+		errors.append("session_manifest.json: `truth_contract.timing_truth_path` is required when `artifacts.timing_truth` is declared")
+
 	return errors
 
 static func to_json(manifest: Dictionary) -> String:
@@ -99,6 +110,21 @@ static func _normalize_tracking_contract(contract: Dictionary) -> Dictionary:
 		"normalized_schema_version": int(contract.get("normalized_schema_version", PoseFrameRecord.SCHEMA_VERSION)),
 		"frame_count": int(contract.get("frame_count", 0)),
 		"timestamp_mode": str(contract.get("timestamp_mode", "")),
+	}
+
+static func _normalize_source_contract(contract: Dictionary) -> Dictionary:
+	return {
+		"source_path": str(contract.get("source_path", "")),
+		"camera_id": str(contract.get("camera_id", "")),
+		"selected_path": str(contract.get("selected_path", "")),
+		"fixture_id": str(contract.get("fixture_id", "")),
+	}
+
+static func _normalize_truth_contract(contract: Dictionary) -> Dictionary:
+	return {
+		"timing_truth_path": str(contract.get("timing_truth_path", "")),
+		"timing_truth_source_path": str(contract.get("timing_truth_source_path", "")),
+		"label_context": str(contract.get("label_context", "")),
 	}
 
 static func _normalize_replay_contract(contract: Dictionary) -> Dictionary:

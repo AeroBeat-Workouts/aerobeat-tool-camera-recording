@@ -173,11 +173,18 @@ godot --headless --path .testbed \
 Current supported real export flows:
 - `source.kind = live_camera`
 - `source.kind = video_file`
+- fixture-linked replay exports via `options.source_kind = fixture_replay`
 
 Current real export artifacts:
 - `session_manifest.json`
 - `tracking/pose_frames.jsonl`
 - `source/source_info.json`
+- optional `truth/timing_truth.yaml` when timing truth is linked
+
+Slice 3 parity rule now enforced in code/tests:
+- live-camera and replay/video-file exports keep the same saved-session contract shape
+- source differences stay in manifest/source metadata (`source_kind`, `source_contract`, `source_info`)
+- fixture-linked replay can attach timing truth through `truth_contract` + `artifacts.timing_truth` without forking the package layout
 
 The replay contract remains manifest-driven and B-first:
 - `replay_contract.replay_mode = saved_tracking_frames`

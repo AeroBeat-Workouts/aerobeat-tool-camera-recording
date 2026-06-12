@@ -206,25 +206,9 @@ static func _build_manifest_for_tracking_export(tracking_config: Dictionary, pos
 	var config := tracking_config.duplicate(true)
 	var source: Dictionary = config.get("source", {}) if config.get("source", {}) is Dictionary else {}
 	var source_kind := str(options.get("source_kind", source.get("kind", "live_camera"))).strip_edges()
-	var artifacts: Dictionary = {
-		"pose_frames": "tracking/pose_frames.jsonl",
-		"source_info": str(options.get("source_info_path", DEFAULT_SOURCE_INFO_ARTIFACT))
-	}
-	var timing_truth_path := str(options.get("timing_truth_path", "")).strip_edges()
-	if timing_truth_path != "":
-		artifacts["timing_truth"] = timing_truth_path
-	var source_contract := {
-		"source_path": str(options.get("source_path", source.get("path", source.get("camera_id", ""))))
-	}
-	if str(source.get("camera_id", "")) != "":
-		source_contract["camera_id"] = str(source.get("camera_id", ""))
-	if str(source.get("path", "")) != "":
-		source_contract["selected_path"] = str(source.get("path", ""))
-	var truth_contract := {}
-	if timing_truth_path != "":
-		truth_contract["timing_truth_path"] = timing_truth_path
-	if str(options.get("label_context", "")).strip_edges() != "":
-		truth_contract["label_context"] = str(options.get("label_context", ""))
+	var artifacts := _build_artifacts_for_tracking_export(options)
+	var source_contract := _build_source_contract_for_tracking_export(source, options)
+	var truth_contract := _build_truth_contract_for_tracking_export(options)
 
 	return SessionManifestV1.normalize({
 		"schema_version": SessionManifestV1.SCHEMA_VERSION,
@@ -253,17 +237,51 @@ static func _build_source_info_for_tracking_export(tracking_config: Dictionary, 
 	var source: Dictionary = config.get("source", {}) if config.get("source", {}) is Dictionary else {}
 	var first_frame: Dictionary = pose_frames[0] if not pose_frames.is_empty() else {}
 	var last_frame: Dictionary = pose_frames[-1] if not pose_frames.is_empty() else {}
-	return {
+	var source_contract := _build_source_contract_for_tracking_export(source, options)
+	var truth_contract := _build_truth_contract_for_tracking_export(options)
+	var source_info := {
 		"source_kind": str(options.get("source_kind", source.get("kind", "live_camera"))),
 		"backend_id": _resolve_backend_id_for_export(config, options),
-		"camera_id": str(source.get("camera_id", "")),
-		"source_path": str(options.get("source_path", source.get("path", source.get("camera_id", "")))),
+		"camera_id": str(source_contract.get("camera_id", "")),
+		"selected_path": str(source_contract.get("selected_path", "")),
+		"source_path": str(source_contract.get("source_path", "")),
+		"fixture_id": str(source_contract.get("fixture_id", "")),
 		"frame_count": pose_frames.size(),
 		"first_frame_index": int(first_frame.get("frame_index", 0)),
 		"last_frame_index": int(last_frame.get("frame_index", 0)),
 		"first_timestamp_ms": int(first_frame.get("timestamp_ms", 0)),
 		"last_timestamp_ms": int(last_frame.get("timestamp_ms", 0)),
 		"replay_mode": "saved_tracking_frames",
+		"timing_truth_linked": str(truth_contract.get("timing_truth_path", "")) != "",
+		"timing_truth_path": str(truth_contract.get("timing_truth_path", "")),
+		"timing_truth_source_path": str(truth_contract.get("timing_truth_source_path", "")),
+		"label_context": str(truth_contract.get("label_context", "")),
+	}
+	return source_info
+
+static func _build_artifacts_for_tracking_export(options: Dictionary) -> Dictionary:
+	var artifacts: Dictionary = {
+		"pose_frames": "tracking/pose_frames.jsonl",
+		"source_info": str(options.get("source_info_path", DEFAULT_SOURCE_INFO_ARTIFACT))
+	}
+	var timing_truth_path := str(options.get("timing_truth_path", "")).strip_edges()
+	if timing_truth_path != "":
+		artifacts["timing_truth"] = timing_truth_path
+	return artifacts
+
+static func _build_source_contract_for_tracking_export(source: Dictionary, options: Dictionary) -> Dictionary:
+	return {
+		"source_path": str(options.get("source_path", source.get("path", source.get("camera_id", "")))),
+		"camera_id": str(options.get("camera_id", source.get("camera_id", ""))),
+		"selected_path": str(options.get("selected_path", source.get("path", ""))),
+		"fixture_id": str(options.get("fixture_id", "")),
+	}
+
+static func _build_truth_contract_for_tracking_export(options: Dictionary) -> Dictionary:
+	return {
+		"timing_truth_path": str(options.get("timing_truth_path", "")).strip_edges(),
+		"timing_truth_source_path": str(options.get("timing_truth_source_path", "")).strip_edges(),
+		"label_context": str(options.get("label_context", "")).strip_edges(),
 	}
 
 static func _resolve_backend_id_for_export(tracking_config: Dictionary, options: Dictionary) -> String:
