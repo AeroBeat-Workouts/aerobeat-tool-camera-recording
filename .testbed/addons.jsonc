@@ -1,7 +1,7 @@
 {
   "$schema": "https://chickensoft.games/schemas/addons.schema.json",
   "addons": {
-    "aerobeat-template-tool": {
+    "aerobeat-tool-camera-recording": {
       "url": "..",
       "source": "symlink",
       "subfolder": "/"

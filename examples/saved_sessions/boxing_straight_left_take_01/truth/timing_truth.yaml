@@ -1,0 +1,4 @@
+events:
+  - label: straight_left
+    start_ms: 1833
+    end_ms: 1900

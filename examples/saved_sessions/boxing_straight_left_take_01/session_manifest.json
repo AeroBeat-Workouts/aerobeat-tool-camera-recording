@@ -1,0 +1,29 @@
+{
+	"schema_version": 1,
+	"session_id": "boxing_straight_left_take_01",
+	"take_id": "take_01",
+	"created_at": "2026-06-11T16:00:00Z",
+	"source_kind": "fixture_replay",
+	"artifacts": {
+		"pose_frames": "tracking/pose_frames.jsonl",
+		"timing_truth": "truth/timing_truth.yaml"
+	},
+	"tracking_contract": {
+		"backend_id": "mediapipe_python",
+		"normalized_schema_version": 1,
+		"frame_count": 3,
+		"timestamp_mode": "video_time_ms"
+	},
+	"source_contract": {
+		"source_path": "fixtures/boxing/straight_left/straight_left_take_01.mp4"
+	},
+	"truth_contract": {
+		"timing_truth_path": "truth/timing_truth.yaml",
+		"label_context": "boxing_side_aware_punches_v1"
+	},
+	"debug_contract": {},
+	"replay_contract": {
+		"replay_mode": "saved_tracking_frames",
+		"entrypoint": "tracking/pose_frames.jsonl"
+	}
+}

@@ -1,48 +1,120 @@
-# AeroBeat Tool Template
+# AeroBeat Tool Camera Recording
 
-This is the official template for creating **Tool** repositories within the current AeroBeat v1 architecture.
+This repo owns the **durable saved-session artifact contract** for AeroBeat camera-tracking exports.
 
-It should be read against the locked product direction from `aerobeat-docs`:
+Slice 1 intentionally stops at **package/bootstrap truth**. It does **not** implement replay, live capture orchestration, or video re-inference yet. Instead, it freezes the saved-session package shape, the v1 `session_manifest.json` contract, the `tracking/pose_frames.jsonl` writer contract, and the minimal validation/generation helpers that later Slice 2 work will build on.
 
-- **Primary release target:** PC community first
-- **Official v1 gameplay features:** Boxing and Flow
-- **Official v1 gameplay input:** camera only
-- **Tool stance:** tools should stay workflow-oriented and gameplay-mode agnostic enough to support the current product slice without implying equal-status future gameplay/input/platform scope
-- **Tool lane ownership:** shared tool-side DTOs, progress/result models, and workflow interfaces belong in `aerobeat-tool-core`; concrete authoring/import/export/validation tooling belongs in specific `aerobeat-tool-*` repos
+The contract here is driven by the frozen parent plan at:
 
-## Naming rule: rename the manager after cloning
+- `/home/derrick/.openclaw/workspace/projects/aerobeat/.plans/2026-06-10-boxing-pose-classifier-and-recording-plan.md`
 
-This template intentionally ships with `src/AeroToolManager.gd` as a **clone-time placeholder only**.
+## Current contract scope
 
-After creating a real repo from this template, a human or agent must rename that file/class/autoload entry to the repo's actual public manager name before treating the repo as real work.
+- repo-specific `CameraRecordingManager` entry surface for saved-session package bootstrap work
+- v1 `session_manifest.json` normalization + validation helpers
+- v1 `tracking/pose_frames.jsonl` normalization + validation helpers
+- saved-session folder/layout validation for B-first `saved_tracking_frames` packages
+- support for structurally validating A-second `video_reinference` manifests without implementing replay itself
+- canonical example saved-session package under `examples/saved_sessions/`
+- headless helper scripts for generating a package skeleton and validating a saved-session package
 
-Examples:
+## Repo boundary
 
-- `aerobeat-tool-api` → `AeroApiManager.gd`
-- `aerobeat-tool-settings` → `AeroSettingsManager.gd`
-- another import/export tool → a repo-specific manager name that matches its contract
+This repo **does own**:
+- saved-session package layout and artifact manifest truth
+- pose-frame persistence contract and machine checks
+- source/truth/debug artifact path semantics inside the saved-session package
+- bootstrap helpers that create a structurally valid package skeleton
 
-`AeroToolManager` is **not** an acceptable shipped final runtime identity. The placeholder exists only because GitHub template clones do not yet perform token replacement for file/class names.
+This repo **does not own yet**:
+- replay execution
+- vendor inference
+- `aerobeat-tool-camera-tracking` session lifecycle truth
+- gameplay gesture interpretation
+- prototype matching or learned classifier logic
 
-## 📋 Repository Details
+## Frozen package layout
 
-- **Type:** Tool template
-- **License:** **Mozilla Public License 2.0 (MPL 2.0)**
-- **Dependency contract:**
-  - `aerobeat-tool-core` — required shared tool/workflow contract
-  - additional adjacent lane/core repos only when the specific tool actually consumes them (commonly `aerobeat-content-core` or `aerobeat-asset-core`)
+```text
+<session-root>/
+  session_manifest.json
+  source/
+    source_video.mp4                # optional for Slice 1; expected later for video_reinference packages
+    source_info.json                # optional
+  tracking/
+    pose_frames.jsonl               # required
+    hand_frames.jsonl               # optional, not required in Slice 1
+    tracking_summary.json           # optional
+  truth/
+    timing_truth.yaml               # optional, expected for fixture-linked sessions when known
+    labels.yaml                     # optional later/manual augmentation
+  debug/
+    export_summary.json             # optional
+  notes/
+    operator_notes.md               # optional
+```
+
+`session_manifest.json` is the only canonical entrypoint. Downstream work must resolve artifacts from the manifest instead of guessing by filename.
+
+## Manifest highlights
+
+Required top-level manifest fields:
+- `schema_version`
+- `session_id`
+- `take_id`
+- `created_at`
+- `source_kind`
+- `artifacts.pose_frames`
+- `tracking_contract.backend_id`
+- `tracking_contract.normalized_schema_version`
+- `tracking_contract.frame_count`
+- `tracking_contract.timestamp_mode`
+- `replay_contract.replay_mode`
+- `replay_contract.entrypoint`
+
+Current supported `source_kind` values:
+- `live_camera`
+- `video_file`
+- `fixture_replay`
+
+Current supported `replay_contract.replay_mode` values:
+- `saved_tracking_frames`
+- `video_reinference`
+
+## Pose-frame JSONL highlights
+
+Each `tracking/pose_frames.jsonl` line is one JSON object with these required fields:
+- `frame_index`
+- `timestamp_ms`
+- `timestamp_seconds`
+- `tracking_state`
+- `landmarks`
+
+Each landmark object currently requires:
+- `id` — canonical semantic landmark name string, for example `left_shoulder`
+- `x`
+- `y`
+- `z`
+- `v`
+
+This intentionally freezes the saved-session recording format around semantic landmark IDs instead of raw vendor-private payloads.
+
+## Canonical example package
+
+See:
+- `examples/saved_sessions/boxing_straight_left_take_01/session_manifest.json`
+- `examples/saved_sessions/boxing_straight_left_take_01/tracking/pose_frames.jsonl`
+
+These are the canonical Slice 1 examples used by tests and validation.
 
 ## GodotEnv development flow
 
-This repo uses the AeroBeat GodotEnv package convention.
+This repo follows the AeroBeat GodotEnv package convention.
 
 - Canonical dev/test manifest: `.testbed/addons.jsonc`
 - Installed dev/test addons: `.testbed/addons/`
-- GodotEnv cache: `.testbed/.addons/`
 - Hidden workbench project: `.testbed/project.godot`
 - Repo-local unit tests: `.testbed/tests/`
-
-The repo root remains the package/published boundary for downstream consumers. Day-to-day development, debugging, and validation happen from the hidden `.testbed/` workbench using the pinned OpenClaw toolchain: Godot `4.6.2 stable standard`.
 
 ### Restore dev/test dependencies
 
@@ -53,18 +125,6 @@ cd .testbed
 godotenv addons install
 ```
 
-That restores this repo's current dev/test manifest into `.testbed/addons/`. Canonically, Tool templates should keep the baseline manifest narrow: `aerobeat-tool-core` plus test-only tooling.
-
-### Open the workbench
-
-From the repo root:
-
-```bash
-godot --editor --path .testbed
-```
-
-Use this `.testbed/` project as the canonical direct-development and bugfinding surface for tool-template work.
-
 ### Import smoke check
 
 From the repo root:
@@ -73,7 +133,7 @@ From the repo root:
 godot --headless --path .testbed --import
 ```
 
-### Run unit tests
+### Run repo-local tests
 
 From the repo root:
 
@@ -84,11 +144,26 @@ godot --headless --path .testbed --script addons/aerobeat-vendor-godot-unit-test
   -gexit
 ```
 
-### Validation notes
+### Validate a saved-session package from the CLI
 
-- `.testbed/addons.jsonc` is the committed dev/test dependency contract.
-- The canonical template manifest for this repo is `aerobeat-tool-core` + `aerobeat-vendor-godot-unit-test`.
-- `aerobeat-tool-core` is currently pinned to `main` intentionally because the repo does not yet have release tags; switch to a tag once tagged releases exist.
-- If a concrete tool needs adjacent lane repos, add them intentionally rather than restoring a universal `aerobeat-core` baseline.
-- Repo-local unit tests live under `.testbed/tests/` and currently validate repo metadata plus the template stub contract.
-- The current package shape is consumed from the repo root (`subfolder: "/"`) for downstream installs.
+From the repo root:
+
+```bash
+godot --headless --path .testbed \
+  --script res://addons/aerobeat-tool-camera-recording/scripts/validate_saved_session.gd \
+  -- --session-root ../examples/saved_sessions/boxing_straight_left_take_01
+```
+
+### Generate a saved-session package skeleton from the CLI
+
+From the repo root:
+
+```bash
+godot --headless --path .testbed \
+  --script res://addons/aerobeat-tool-camera-recording/scripts/write_example_saved_session.gd \
+  -- --output-root ../.tmp/generated_saved_session
+```
+
+## Additional contract docs
+
+- `docs/saved-session-contract.md` — frozen Slice 1 contract details, required/optional files, and validation rules
