@@ -2,11 +2,7 @@
 
 This repo owns the **durable saved-session artifact contract** for AeroBeat camera-tracking exports.
 
-Slice 1 stops at **package/bootstrap truth**. Slice 2 extends that frozen contract into a truthful export lane. This repo still does **not** own replay execution or A-mode video re-inference, but it now owns the real saved-session writer flow for tracker-produced normalized frames: live-camera and video-file sessions can be exported into truthful `session_manifest.json` + `tracking/pose_frames.jsonl` packages, with manifest-declared `source/source_info.json` metadata for the real export path.
-
-The contract here is driven by the frozen parent plan at:
-
-- `/home/derrick/.openclaw/workspace/projects/aerobeat/.plans/2026-06-10-boxing-pose-classifier-and-recording-plan.md`
+It owns the current saved-session writer flow for tracker-produced normalized frames: live-camera and video-file sessions can be exported into truthful `session_manifest.json` + `tracking/pose_frames.jsonl` packages, with manifest-declared `source/source_info.json` metadata for the real export path. This repo still does **not** own replay execution or A-mode video re-inference.
 
 ## Current contract scope
 
