@@ -2,6 +2,6 @@
   "database": "dolt",
   "backend": "dolt",
   "dolt_mode": "embedded",
-  "dolt_database": "oc",
-  "project_id": "f91b2e0d-8741-4b4a-8bba-9fbe64ad27aa"
+  "dolt_database": "aerobeat_tool_camera_recording",
+  "project_id": "ca099983-1c79-4489-94b9-a4dbeca11dee"
 }

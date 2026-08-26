@@ -33,3 +33,6 @@ CLAUDE.md
 AGENTS.md
 
 .testbed/.headless/
+
+# Beads / Dolt files (added by bd init)
+.beads/proxieddb/
